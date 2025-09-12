@@ -29,6 +29,7 @@ CHECKPOINT_MODELS=(
     #"civitai.com/api/download/models/1761560?token=0debcc7324cf4c852806acd6ba85489f"
     #v15
     "civitai.com/api/download/models/2167369?token=0debcc7324cf4c852806acd6ba85489f"
+)
 
 UNET_MODELS=(
 )
