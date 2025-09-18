@@ -40,6 +40,7 @@ LORA_MODELS=(
     "civitai.com/api/download/models/1845953?token=0debcc7324cf4c852806acd6ba85489f"
     "civitai.com/api/download/models/1891887?token=0debcc7324cf4c852806acd6ba85489f"
     "civitai.com/api/download/models/1785002?token=0debcc7324cf4c852806acd6ba85489f"
+    "civitai.com/api/download/models/625365?token=0debcc7324cf4c852806acd6ba85489f"
 )
 
 VAE_MODELS=(
