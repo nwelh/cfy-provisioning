@@ -36,11 +36,12 @@ UNET_MODELS=(
 
 LORA_MODELS=(
     "civitai.com/api/download/models/1858609?token=0debcc7324cf4c852806acd6ba85489f"
-    "civitai.com/api/download/models/660065?token=0debcc7324cf4c852806acd6ba85489f"
-    "civitai.com/api/download/models/1845953?token=0debcc7324cf4c852806acd6ba85489f"
-    "civitai.com/api/download/models/1891887?token=0debcc7324cf4c852806acd6ba85489f"
-    "civitai.com/api/download/models/1785002?token=0debcc7324cf4c852806acd6ba85489f"
-    "civitai.com/api/download/models/625365?token=0debcc7324cf4c852806acd6ba85489f"
+    "civitai.com/api/download/models/660065?token=0debcc7324cf4c852806acd6ba85489f" #tug
+    "civitai.com/api/download/models/1845953?token=0debcc7324cf4c852806acd6ba85489f" #Body Type
+    "civitai.com/api/download/models/1891887?token=0debcc7324cf4c852806acd6ba85489f" #Age 
+    "civitai.com/api/download/models/1785002?token=0debcc7324cf4c852806acd6ba85489f" #Perfect 
+    "civitai.com/api/download/models/625365?token=0debcc7324cf4c852806acd6ba85489f" #Thigh 
+    "civitai.com/api/download/models/1523340?token=0debcc7324cf4c852806acd6ba85489f" #Thicc 
 )
 
 VAE_MODELS=(
