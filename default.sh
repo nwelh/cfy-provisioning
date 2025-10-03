@@ -35,7 +35,8 @@ UNET_MODELS=(
 )
 
 LORA_MODELS=(
-    "civitai.com/api/download/models/1858609?token=0debcc7324cf4c852806acd6ba85489f"
+    #"civitai.com/api/download/models/1858609?token=0debcc7324cf4c852806acd6ba85489f"
+    "civitai.com/api/download/models/2263757?token=0debcc7324cf4c852806acd6ba85489f"
     "civitai.com/api/download/models/660065?token=0debcc7324cf4c852806acd6ba85489f" #tug
     "civitai.com/api/download/models/1845953?token=0debcc7324cf4c852806acd6ba85489f" #Body Type
     "civitai.com/api/download/models/1891887?token=0debcc7324cf4c852806acd6ba85489f" #Age 
