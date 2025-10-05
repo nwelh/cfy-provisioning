@@ -42,6 +42,7 @@ LORA_MODELS=(
     "civitai.com/api/download/models/1845953?token=0debcc7324cf4c852806acd6ba85489f" #Body Type
     "civitai.com/api/download/models/1891887?token=0debcc7324cf4c852806acd6ba85489f" #Age 
     "civitai.com/api/download/models/1785002?token=0debcc7324cf4c852806acd6ba85489f" #Perfect 
+    "civitai.com/api/download/models/1190779?token=0debcc7324cf4c852806acd6ba85489f" #booty
     "civitai.com/api/download/models/625365?token=0debcc7324cf4c852806acd6ba85489f" #Thigh 
     "civitai.com/api/download/models/2272010?token=0debcc7324cf4c852806acd6ba85489f" #Thigh kb
     "civitai.com/api/download/models/1523340?token=0debcc7324cf4c852806acd6ba85489f" #Thicc 
