@@ -196,3 +196,55 @@ function provisioning_download() {
 if [[ ! -f /.noprovisioning ]]; then
     provisioning_start
 fi
+
+
+# --- ここから末尾に追記 ---
+
+MY_PC_ID=${MY_SYNCTHING_ID:-""}
+
+function setup_syncthing_auto() {
+    if [[ -z "$MY_PC_ID" ]]; then
+        printf "\n[Skip] MY_SYNCTHING_ID is not set.\n"
+        return
+    fi
+
+    # 1. 既存の Syncthing プロセスを終了させる (二重起動防止)
+    printf "\n[Syncthing] Stopping existing process if any...\n"
+    pkill -x syncthing || true
+    sleep 2
+
+    # 2. 同期用実体フォルダの作成とリンク (前回と同様)
+    local SYNC_LORA_DIR="/workspace/synced_loras"
+    local SYNC_OUTPUT_DIR="/workspace/synced_outputs"
+    mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR"
+    
+    ln -sf "$SYNC_LORA_DIR" "${COMFYUI_DIR}/models/loras/synced"
+    if [ -d "${COMFYUI_DIR}/output" ] && [ ! -L "${COMFYUI_DIR}/output" ]; then
+        rm -rf "${COMFYUI_DIR}/output"
+    fi
+    ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
+
+    # 3. 設定ファイルの生成 (上書き)
+    mkdir -p /root/.config/syncthing
+    cat <<EOF > /root/.config/syncthing/config.xml
+<configuration version="37">
+    <folder id="lora_upload" label="LoRA Upload" path="$SYNC_LORA_DIR" type="receiveonly" rescanIntervalS="3600">
+        <device id="$MY_PC_ID"></device>
+    </folder>
+    <folder id="output_download" label="ComfyUI Output" path="$SYNC_OUTPUT_DIR" type="sendonly" rescanIntervalS="60">
+        <device id="$MY_PC_ID"></device>
+    </folder>
+    <device id="$MY_PC_ID" name="My-Desktop-PC"><address>dynamic</address></device>
+    <gui enabled="true" tls="false"><address>0.0.0.0:8384</address></gui>
+    <options><globalAnnounceEnabled>true</globalAnnounceEnabled></options>
+</configuration>
+EOF
+
+    # 4. 新しい設定で再起動
+    printf "[Syncthing] Restarting with custom config...\n"
+    syncthing --no-browser > /workspace/syncthing.log 2>&1 &
+}
+
+if [[ ! -f /.noprovisioning ]]; then
+    setup_syncthing_auto
+fi
