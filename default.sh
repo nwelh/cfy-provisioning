@@ -200,8 +200,6 @@ fi
 
 # --- ここから末尾に追記 ---
 
-MY_PC_ID=${MY_SYNCTHING_ID:-""}
-
 function setup_syncthing_auto() {
     if [[ -z "$MY_PC_ID" ]]; then
         printf "\n[Skip] MY_SYNCTHING_ID is not set.\n"
