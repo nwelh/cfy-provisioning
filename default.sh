@@ -26,28 +26,28 @@ WORKFLOWS=(
 
 CHECKPOINT_MODELS=(
     #v14
-    #"civitai.com/api/download/models/1761560?token=0debcc7324cf4c852806acd6ba85489f"
+    #"civitai.com/api/download/models/1761560?token=CIVITAI_TOKEN"
     #v15
-    #"civitai.com/api/download/models/2167369?token=0debcc7324cf4c852806acd6ba85489f"
+    #"civitai.com/api/download/models/2167369?token=CIVITAI_TOKEN"
     #v16
-    "civitai.com/api/download/models/2514310?token=0debcc7324cf4c852806acd6ba85489f"
+    "civitai.com/api/download/models/2514310?token=CIVITAI_TOKEN"
 )
 
 UNET_MODELS=(
 )
 
 LORA_MODELS=(
-    #"civitai.com/api/download/models/1858609?token=0debcc7324cf4c852806acd6ba85489f"
-    #"civitai.com/api/download/models/2263757?token=0debcc7324cf4c852806acd6ba85489f" #ass kb
-    #"civitai.com/api/download/models/2263203?token=0debcc7324cf4c852806acd6ba85489f" #hip kb
-    "civitai.com/api/download/models/660065?token=0debcc7324cf4c852806acd6ba85489f" #tug
-    "civitai.com/api/download/models/1845953?token=0debcc7324cf4c852806acd6ba85489f" #Body Type
-    "civitai.com/api/download/models/1891887?token=0debcc7324cf4c852806acd6ba85489f" #Age 
-    "civitai.com/api/download/models/1785002?token=0debcc7324cf4c852806acd6ba85489f" #Perfect 
-    "civitai.com/api/download/models/1190779?token=0debcc7324cf4c852806acd6ba85489f" #booty
-    "civitai.com/api/download/models/625365?token=0debcc7324cf4c852806acd6ba85489f" #Thigh 
-    "civitai.com/api/download/models/2272010?token=0debcc7324cf4c852806acd6ba85489f" #Thigh kb
-    "civitai.com/api/download/models/1523340?token=0debcc7324cf4c852806acd6ba85489f" #Thicc 
+    #"civitai.com/api/download/models/1858609?token=CIVITAI_TOKEN"
+    #"civitai.com/api/download/models/2263757?token=CIVITAI_TOKEN" #ass kb
+    #"civitai.com/api/download/models/2263203?token=CIVITAI_TOKEN" #hip kb
+    "civitai.com/api/download/models/660065?token=CIVITAI_TOKEN" #tug
+    "civitai.com/api/download/models/1845953?token=CIVITAI_TOKEN" #Body Type
+    "civitai.com/api/download/models/1891887?token=CIVITAI_TOKEN" #Age 
+    "civitai.com/api/download/models/1785002?token=CIVITAI_TOKEN" #Perfect 
+    "civitai.com/api/download/models/1190779?token=CIVITAI_TOKEN" #booty
+    "civitai.com/api/download/models/625365?token=CIVITAI_TOKEN" #Thigh 
+    "civitai.com/api/download/models/2272010?token=CIVITAI_TOKEN" #Thigh kb
+    "civitai.com/api/download/models/1523340?token=CIVITAI_TOKEN" #Thicc 
 )
 
 VAE_MODELS=(
