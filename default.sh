@@ -103,7 +103,7 @@ EOF
     fuser -k 8384/tcp || pkill -9 -f syncthing || true
     sleep 2
     printf "[Syncthing] Starting with custom configuration...\n"
-    /opt/syncthing/syncthing --no-browser > /workspace/syncthing.log 2>&1 &
+    /opt/syncthing/syncthing --no-browser --home="$CONF_DIR" > /workspace/syncthing.log 2>&1 &
 }
 
 
