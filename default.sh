@@ -64,6 +64,9 @@ CONTROLNET_MODELS=(
 function provisioning_start() {
     provisioning_print_header
     provisioning_get_apt_packages
+    # --- ここで先に Syncthing を起動！ ---
+    setup_syncthing_auto
+    
     provisioning_get_nodes
     provisioning_get_pip_packages
     provisioning_get_files \
@@ -244,5 +247,5 @@ EOF
 }
 
 if [[ ! -f /.noprovisioning ]]; then
-    setup_syncthing_auto
+    #setup_syncthing_auto
 fi
