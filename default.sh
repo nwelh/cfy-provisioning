@@ -209,6 +209,18 @@ function setup_syncthing_auto() {
         return
     fi
 
+
+    # 1. 実行ファイルのパスを定義
+    local SYNC_BIN="/opt/syncthing/syncthing"
+    
+    # 万が一存在しない場合の予備処理（念のため）
+    if [[ ! -f "$SYNC_BIN" ]]; then
+        printf "[Syncthing] Not found at $SYNC_BIN. Trying apt install...\n"
+        sudo apt-get update && sudo apt-get install -y syncthing
+        SYNC_BIN="syncthing" # aptで入れた場合はパスが通るのでコマンド名だけでOK
+    fi
+
+
     # 1. 既存の Syncthing プロセスを終了させる (二重起動防止)
     printf "\n[Syncthing] Stopping existing process if any...\n"
     pkill -x syncthing || true
@@ -242,8 +254,8 @@ function setup_syncthing_auto() {
 EOF
 
     # 4. 新しい設定で再起動
-    printf "[Syncthing] Restarting with custom config...\n"
-    syncthing --no-browser > /workspace/syncthing.log 2>&1 &
+    printf "[Syncthing] Restarting with custom config...  $SYNC_BIN\n"
+    $SYNC_BIN --no-browser > /workspace/syncthing.log 2>&1 &
 }
 
 if [[ ! -f /.noprovisioning ]]; then
