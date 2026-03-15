@@ -62,12 +62,7 @@ CONTROLNET_MODELS=(
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
 
 function setup_syncthing_auto() {
-    if [[ -z "$MY_PC_ID" ]]; then
-        printf "\n[Skip] MY_SYNCTHING_ID is not set.\n"
-        return
-    fi
-
-    # 1. 同期用実体フォルダの作成とリンク (前回と同様)
+    # 1. フォルダ準備（ComfyUI_DIRは元のスクリプトの変数を使用）
     local SYNC_LORA_DIR="/workspace/synced_loras"
     local SYNC_OUTPUT_DIR="/workspace/synced_outputs"
     mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR"
@@ -78,16 +73,15 @@ function setup_syncthing_auto() {
     fi
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
-    local CONFIG_PATH="/root/.config/syncthing/config.xml"
-    
-    # 2. 【重要】既存の config.xml から API キーを先に退避させる
-    local OLD_API_KEY=$(grep -oP '(?<=<apikey>).*?(?=</apikey>)' "$CONFIG_PATH" || echo "")
-    
-    # もし空なら、とりあえず適当な値を決めてしまう（Syncthingがそれを受け入れます）
-    if [[ -z "$OLD_API_KEY" ]]; then OLD_API_KEY="my-super-secret-api-key"; fi
+    # 2. 設定ディレクトリの強制作成とパス設定
+    local CONF_DIR="/root/.config/syncthing"
+    local CONFIG_PATH="${CONF_DIR}/config.xml"
+    mkdir -p "$CONF_DIR"
 
-    # 3. 設定ファイルの生成（apikey タグを含めて書き出す）
-    mkdir -p /root/.config/syncthing
+    # 3. 既存のAPIキー抽出（あれば。なければデフォルト値を設定）
+    local OLD_API_KEY=$(grep -oP '(?<=<apikey>).*?(?=</apikey>)' "$CONFIG_PATH" 2>/dev/null || echo "vastaicomfykey123")
+
+    # 4. config.xml の生成
     cat <<EOF > "$CONFIG_PATH"
 <configuration version="37">
     <gui enabled="true" tls="false">
@@ -95,25 +89,22 @@ function setup_syncthing_auto() {
         <apikey>${OLD_API_KEY}</apikey>
     </gui>
     <folder id="lora_upload" label="LoRA Upload" path="$SYNC_LORA_DIR" type="receiveonly" rescanIntervalS="3600">
-        <device id="$MY_PC_ID"></device>
+        <device id="${MY_SYNCTHING_ID}"></device>
     </folder>
     <folder id="output_download" label="ComfyUI Output" path="$SYNC_OUTPUT_DIR" type="sendonly" rescanIntervalS="60">
-        <device id="$MY_PC_ID"></device>
+        <device id="${MY_SYNCTHING_ID}"></device>
     </folder>
-    <device id="$MY_PC_ID" name="My-Desktop-PC"><address>dynamic</address></device>
+    <device id="${MY_SYNCTHING_ID}" name="VastAI-Instance"><address>dynamic</address></device>
     <options><globalAnnounceEnabled>true</globalAnnounceEnabled></options>
 </configuration>
 EOF
 
-    # 4. 退避させておいた API キーを使って再起動命令を送る
-    printf "[Syncthing] Sending restart command via API...\n"
-    # SyncthingがAPIを受け付けられるようになるまで数秒待機（念のため）
+    # 5. 既存プロセスを掃除して、フルパスで起動
+    fuser -k 8384/tcp || pkill -9 -f syncthing || true
     sleep 2
-    curl -s -X POST -H "X-API-Key: $OLD_API_KEY" http://127.0.0.1:8384/rest/system/restart
-
-    printf "[Syncthing] Configuration updated and restart triggered with API Key.\n"
+    printf "[Syncthing] Starting with custom configuration...\n"
+    /opt/syncthing/syncthing --no-browser > /workspace/syncthing.log 2>&1 &
 }
-
 
 
 function provisioning_start() {
