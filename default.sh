@@ -209,24 +209,7 @@ function setup_syncthing_auto() {
         return
     fi
 
-
-    # 1. 実行ファイルのパスを定義
-    local SYNC_BIN="/opt/syncthing/syncthing"
-    
-    # 万が一存在しない場合の予備処理（念のため）
-    if [[ ! -f "$SYNC_BIN" ]]; then
-        printf "[Syncthing] Not found at $SYNC_BIN. Trying apt install...\n"
-        sudo apt-get update && sudo apt-get install -y syncthing
-        SYNC_BIN="syncthing" # aptで入れた場合はパスが通るのでコマンド名だけでOK
-    fi
-
-
-    # 1. 既存の Syncthing プロセスを終了させる (二重起動防止)
-    printf "\n[Syncthing] Stopping existing process if any...\n"
-    pkill -x syncthing || true
-    sleep 2
-
-    # 2. 同期用実体フォルダの作成とリンク (前回と同様)
+    # 1. 同期用実体フォルダの作成とリンク (前回と同様)
     local SYNC_LORA_DIR="/workspace/synced_loras"
     local SYNC_OUTPUT_DIR="/workspace/synced_outputs"
     mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR"
@@ -237,10 +220,22 @@ function setup_syncthing_auto() {
     fi
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
-    # 3. 設定ファイルの生成 (上書き)
+    local CONFIG_PATH="/root/.config/syncthing/config.xml"
+    
+    # 2. 【重要】既存の config.xml から API キーを先に退避させる
+    local OLD_API_KEY=$(grep -oP '(?<=<apikey>).*?(?=</apikey>)' "$CONFIG_PATH" || echo "")
+    
+    # もし空なら、とりあえず適当な値を決めてしまう（Syncthingがそれを受け入れます）
+    if [[ -z "$OLD_API_KEY" ]]; then OLD_API_KEY="my-super-secret-api-key"; fi
+
+    # 3. 設定ファイルの生成（apikey タグを含めて書き出す）
     mkdir -p /root/.config/syncthing
-    cat <<EOF > /root/.config/syncthing/config.xml
+    cat <<EOF > "$CONFIG_PATH"
 <configuration version="37">
+    <gui enabled="true" tls="false">
+        <address>0.0.0.0:8384</address>
+        <apikey>${OLD_API_KEY}</apikey>
+    </gui>
     <folder id="lora_upload" label="LoRA Upload" path="$SYNC_LORA_DIR" type="receiveonly" rescanIntervalS="3600">
         <device id="$MY_PC_ID"></device>
     </folder>
@@ -248,16 +243,16 @@ function setup_syncthing_auto() {
         <device id="$MY_PC_ID"></device>
     </folder>
     <device id="$MY_PC_ID" name="My-Desktop-PC"><address>dynamic</address></device>
-    <gui enabled="true" tls="false"><address>0.0.0.0:8384</address></gui>
     <options><globalAnnounceEnabled>true</globalAnnounceEnabled></options>
 </configuration>
 EOF
 
-    # 4. 新しい設定で再起動
-    printf "[Syncthing] Restarting with custom config...  $SYNC_BIN\n"
-    $SYNC_BIN --no-browser > /workspace/syncthing.log 2>&1 &
+    # 4. 退避させておいた API キーを使って再起動命令を送る
+    printf "[Syncthing] Sending restart command via API...\n"
+    # SyncthingがAPIを受け付けられるようになるまで数秒待機（念のため）
+    sleep 2
+    curl -s -X POST -H "X-API-Key: $OLD_API_KEY" http://127.0.0.1:8384/rest/system/restart
+
+    printf "[Syncthing] Configuration updated and restart triggered with API Key.\n"
 }
 
-if [[ ! -f /.noprovisioning ]]; then
-    #setup_syncthing_auto
-fi
