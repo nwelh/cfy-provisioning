@@ -74,7 +74,7 @@ function setup_syncthing_auto() {
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
     # 2. 設定ディレクトリの強制作成とパス設定
-    local CONF_DIR="/root/.config/syncthing"
+    local CONF_DIR="/var/lib/portal/syncthing"
     local CONFIG_PATH="${CONF_DIR}/config.xml"
     mkdir -p "$CONF_DIR"
 
@@ -85,7 +85,7 @@ function setup_syncthing_auto() {
     cat <<EOF > "$CONFIG_PATH"
 <configuration version="37">
     <gui enabled="true" tls="false">
-        <address>0.0.0.0:8384</address>
+        <address>0.0.0.0:18384</address>
         <apikey>${OLD_API_KEY}</apikey>
     </gui>
     <folder id="lora_upload" label="LoRA Upload" path="$SYNC_LORA_DIR" type="receiveonly" rescanIntervalS="3600">
