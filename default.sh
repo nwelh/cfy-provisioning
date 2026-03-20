@@ -62,48 +62,65 @@ CONTROLNET_MODELS=(
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
 
 function setup_syncthing_auto() {
-    # 1. フォルダ準備（ComfyUI_DIRは元のスクリプトの変数を使用）
+    printf "[Syncthing] Starting setup via CLI...\n"
+
+    # 1. ディレクトリ準備
     local SYNC_LORA_DIR="/workspace/synced_loras"
     local SYNC_OUTPUT_DIR="/workspace/synced_outputs"
-    mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR"
+    local CONF_DIR="/workspace/syncthing_conf" # 永続化しやすい場所に変更
+    mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR" "$CONF_DIR"
     
+    # ComfyUIとのシンボリックリンク作成
     ln -sf "$SYNC_LORA_DIR" "${COMFYUI_DIR}/models/loras/synced"
     if [ -d "${COMFYUI_DIR}/output" ] && [ ! -L "${COMFYUI_DIR}/output" ]; then
         rm -rf "${COMFYUI_DIR}/output"
     fi
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
-    # 2. 設定ディレクトリの強制作成とパス設定
-    local CONF_DIR="/var/lib/portal/syncthing"
-    local CONFIG_PATH="${CONF_DIR}/config.xml"
-    mkdir -p "$CONF_DIR"
+    # 2. Syncthingを一旦バックグラウンドで起動（設定生成のため）
+    # APIを叩くためにGUIアドレスを固定して起動
+    /opt/syncthing/syncthing --no-browser --home="$CONF_DIR" --gui-address="0.0.0.0:18384" > /workspace/syncthing.log 2>&1 &
+    
+    # 起動を待機（最大30秒）
+    printf "[Syncthing] Waiting for API to be ready..."
+    for i in {1..30}; do
+        if curl -s http://localhost:18384/rest/system/ping > /dev/null; then
+            printf " Ready!\n"
+            break
+        fi
+        sleep 1
+    done
 
-    # 3. 既存のAPIキー抽出（あれば。なければデフォルト値を設定）
-    local OLD_API_KEY=$(grep -oP '(?<=<apikey>).*?(?=</apikey>)' "$CONFIG_PATH" 2>/dev/null || echo "vastaicomfykey123")
+    # 3. CLIを使って設定を注入
+    # APIキーを取得（CLI実行に必要）
+    local API_KEY=$(grep -oP '(?<=<apikey>).*?(?=</apikey>)' "${CONF_DIR}/config.xml")
+    export STGUIADDRESS="http://localhost:18384"
+    export STAPIKEY="$API_KEY"
 
-    # 4. config.xml の生成
-    cat <<EOF > "$CONFIG_PATH"
-<configuration version="37">
-    <gui enabled="true" tls="false">
-        <address>0.0.0.0:18384</address>
-        <apikey>${OLD_API_KEY}</apikey>
-    </gui>
-    <folder id="lora_upload" label="LoRA Upload" path="$SYNC_LORA_DIR" type="receiveonly" rescanIntervalS="3600">
-        <device id="${MY_SYNCTHING_ID}"></device>
-    </folder>
-    <folder id="output_download" label="ComfyUI Output" path="$SYNC_OUTPUT_DIR" type="sendonly" rescanIntervalS="60">
-        <device id="${MY_SYNCTHING_ID}"></device>
-    </folder>
-    <device id="${MY_SYNCTHING_ID}" name="VastAI-Instance"><address>dynamic</address></device>
-    <options><globalAnnounceEnabled>true</globalAnnounceEnabled></options>
-</configuration>
-EOF
-
-    # 5. 既存プロセスを掃除して、フルパスで起動
-    fuser -k 8384/tcp || pkill -9 -f syncthing || true
-    sleep 2
-    printf "[Syncthing] Starting with custom configuration...\n"
-    /opt/syncthing/syncthing --no-browser --home="$CONF_DIR" > /workspace/syncthing.log 2>&1 &
+    # 自分のデバイスIDを指定（環境変数 MY_SYNCTHING_ID がある前提）
+    # もし相手のIDを登録したい場合は、ここに相手のIDを入れる
+    if [ -n "$MY_SYNCTHING_ID" ]; then
+        printf "[Syncthing] Adding remote device: ${MY_SYNCTHING_ID}\n"
+        syncthing cli config devices add --device-id "${MY_SYNCTHING_ID}" --name "My-Remote-Device"
+        
+        # フォルダの追加と共有設定
+        printf "[Syncthing] Configuring folders...\n"
+        
+        # LoRA受信フォルダ (Receive Only)
+        syncthing cli config folders add --id "lora_upload" --path "$SYNC_LORA_DIR"
+        syncthing cli config folders "lora_upload" type set "receiveonly"
+        syncthing cli config folders "lora_upload" devices add --device-id "${MY_SYNCTHING_ID}"
+        
+        # Output送信フォルダ (Send Only)
+        syncthing cli config folders add --id "output_download" --path "$SYNC_OUTPUT_DIR"
+        syncthing cli config folders "output_download" type set "sendonly"
+        syncthing cli config folders "output_download" devices add --device-id "${MY_SYNCTHING_ID}"
+        
+        # 設定を反映させるための再起動（API経由）
+        syncthing cli system restart
+    else
+        printf "[Syncthing] WARNING: MY_SYNCTHING_ID is not set. Skipping device auto-config.\n"
+    fi
 }
 
 
