@@ -62,65 +62,60 @@ CONTROLNET_MODELS=(
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
 
 function setup_syncthing_auto() {
-    printf "[Syncthing] Starting setup via CLI...\n"
+    printf "[Syncthing] Configuring with CLI before startup...\n"
 
-    # 1. ディレクトリ準備
+    # 1. ディレクトリとシンボリックリンクの準備
     local SYNC_LORA_DIR="/workspace/synced_loras"
     local SYNC_OUTPUT_DIR="/workspace/synced_outputs"
-    local CONF_DIR="/workspace/syncthing_conf" # 永続化しやすい場所に変更
-    mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR" "$CONF_DIR"
+    local MY_CONF_DIR="/workspace/syncthing_conf" # Portalの設定とは別に作成
     
-    # ComfyUIとのシンボリックリンク作成
+    mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR" "$MY_CONF_DIR"
+    
+    # ComfyUIのパスをシンボリックリンクで差し替え
     ln -sf "$SYNC_LORA_DIR" "${COMFYUI_DIR}/models/loras/synced"
     if [ -d "${COMFYUI_DIR}/output" ] && [ ! -L "${COMFYUI_DIR}/output" ]; then
         rm -rf "${COMFYUI_DIR}/output"
     fi
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
-    # 2. Syncthingを一旦バックグラウンドで起動（設定生成のため）
-    # APIを叩くためにGUIアドレスを固定して起動
-    /opt/syncthing/syncthing --no-browser --home="$CONF_DIR" --gui-address="0.0.0.0:18384" > /workspace/syncthing.log 2>&1 &
-    
-    # 起動を待機（最大30秒）
-    printf "[Syncthing] Waiting for API to be ready..."
-    for i in {1..30}; do
-        if curl -s http://localhost:18384/rest/system/ping > /dev/null; then
-            printf " Ready!\n"
-            break
-        fi
-        sleep 1
-    done
+    # 2. CLIツールへのエイリアス設定（--home を指定するのがコツ）
+    # これにより、APIキーなしで直接ファイルを書き換えられます
+    local ST_CLI="/opt/syncthing/syncthing cli --home=$MY_CONF_DIR"
 
-    # 3. CLIを使って設定を注入
-    # APIキーを取得（CLI実行に必要）
-    local API_KEY=$(grep -oP '(?<=<apikey>).*?(?=</apikey>)' "${CONF_DIR}/config.xml")
-    export STGUIADDRESS="http://localhost:18384"
-    export STAPIKEY="$API_KEY"
-
-    # 自分のデバイスIDを指定（環境変数 MY_SYNCTHING_ID がある前提）
-    # もし相手のIDを登録したい場合は、ここに相手のIDを入れる
+    # 3. 起動前の「静的」な設定流し込み
     if [ -n "$MY_SYNCTHING_ID" ]; then
-        printf "[Syncthing] Adding remote device: ${MY_SYNCTHING_ID}\n"
-        syncthing cli config devices add --device-id "${MY_SYNCTHING_ID}" --name "My-Remote-Device"
+        printf "[Syncthing] Setting up device and folders...\n"
         
-        # フォルダの追加と共有設定
-        printf "[Syncthing] Configuring folders...\n"
+        # 自分のデバイスID（手元のPC）を追加
+        $ST_CLI config devices add --device-id "${MY_SYNCTHING_ID}" --name "My-Remote-PC"
         
-        # LoRA受信フォルダ (Receive Only)
-        syncthing cli config folders add --id "lora_upload" --path "$SYNC_LORA_DIR"
-        syncthing cli config folders "lora_upload" type set "receiveonly"
-        syncthing cli config folders "lora_upload" devices add --device-id "${MY_SYNCTHING_ID}"
+        # フォルダ追加: LoRA (Receive Only)
+        $ST_CLI config folders add --id "lora_upload" --path "$SYNC_LORA_DIR"
+        $ST_CLI config folders "lora_upload" type set "receiveonly"
+        $ST_CLI config folders "lora_upload" devices add --device-id "${MY_SYNCTHING_ID}"
         
-        # Output送信フォルダ (Send Only)
-        syncthing cli config folders add --id "output_download" --path "$SYNC_OUTPUT_DIR"
-        syncthing cli config folders "output_download" type set "sendonly"
-        syncthing cli config folders "output_download" devices add --device-id "${MY_SYNCTHING_ID}"
+        # フォルダ追加: Output (Send Only)
+        $ST_CLI config folders add --id "output_download" --path "$SYNC_OUTPUT_DIR"
+        $ST_CLI config folders "output_download" type set "sendonly"
+        $ST_CLI config folders "output_download" devices add --device-id "${MY_SYNCTHING_ID}"
+
+        # GUI/APIの待受アドレス設定（Portalのポート競合を避けるため18384を使用）
+        $ST_CLI config gui address set "0.0.0.0:18384"
+        $ST_CLI config gui tls set false
         
-        # 設定を反映させるための再起動（API経由）
-        syncthing cli system restart
+        # APIキーを固定（もし後でAPIを使いたくなった時のために決めておく）
+        $ST_CLI config gui apikey set "vastaicomfykey123"
     else
-        printf "[Syncthing] WARNING: MY_SYNCTHING_ID is not set. Skipping device auto-config.\n"
+        printf "[Syncthing] SKIP: MY_SYNCTHING_ID not found in ENV.\n"
     fi
+
+    # 4. 既存のSyncthing（Portalが自動起動したものなど）があれば終了させる
+    pkill -9 syncthing || true
+    sleep 1
+
+    # 5. 自分の設定ファイルを使って起動
+    printf "[Syncthing] Starting service with custom home: $MY_CONF_DIR\n"
+    /opt/syncthing/syncthing --no-browser --home="$MY_CONF_DIR" > /workspace/syncthing.log 2>&1 &
 }
 
 
