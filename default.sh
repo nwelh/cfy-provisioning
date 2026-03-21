@@ -62,59 +62,47 @@ CONTROLNET_MODELS=(
 ### DO NOT EDIT BELOW HERE UNLESS YOU KNOW WHAT YOU ARE DOING ###
 
 function setup_syncthing_auto() {
-    printf "[Syncthing] Configuring with CLI before startup...\n"
+    printf "[Syncthing] Configuring with CLI inside /workspace for persistence...\n"
 
-    # 1. ディレクトリとシンボリックリンクの準備
+    # 1. 永続化されるディレクトリの準備
+    local MY_CONF_DIR="/workspace/syncthing_conf"
     local SYNC_LORA_DIR="/workspace/synced_loras"
     local SYNC_OUTPUT_DIR="/workspace/synced_outputs"
-    local MY_CONF_DIR="/workspace/syncthing_conf" # Portalの設定とは別に作成
+    mkdir -p "$MY_CONF_DIR" "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR"
     
-    mkdir -p "$SYNC_LORA_DIR" "$SYNC_OUTPUT_DIR" "$MY_CONF_DIR"
-    
-    # ComfyUIのパスをシンボリックリンクで差し替え
+    # ComfyUIとのリンク作成
     ln -sf "$SYNC_LORA_DIR" "${COMFYUI_DIR}/models/loras/synced"
-    if [ -d "${COMFYUI_DIR}/output" ] && [ ! -L "${COMFYUI_DIR}/output" ]; then
-        rm -rf "${COMFYUI_DIR}/output"
-    fi
+    [ -d "${COMFYUI_DIR}/output" ] && [ ! -L "${COMFYUI_DIR}/output" ] && rm -rf "${COMFYUI_DIR}/output"
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
-    # 2. CLIツールへのエイリアス設定（--home を指定するのがコツ）
-    # これにより、APIキーなしで直接ファイルを書き換えられます
+    # 2. CLIツール定義 (パスを固定して「起動前」に設定を流し込む)
     local ST_CLI="/opt/syncthing/syncthing cli --home=$MY_CONF_DIR"
 
-    # 3. 起動前の「静的」な設定流し込み
     if [ -n "$MY_SYNCTHING_ID" ]; then
-        printf "[Syncthing] Setting up device and folders...\n"
+        printf "[Syncthing] Applying settings to: $MY_CONF_DIR\n"
         
-        # 自分のデバイスID（手元のPC）を追加
+        # 自分のデバイスを追加
         $ST_CLI config devices add --device-id "${MY_SYNCTHING_ID}" --name "My-Remote-PC"
         
-        # フォルダ追加: LoRA (Receive Only)
+        # フォルダ設定 (LoRA: 受信専用 / Output: 送信専用)
         $ST_CLI config folders add --id "lora_upload" --path "$SYNC_LORA_DIR"
         $ST_CLI config folders "lora_upload" type set "receiveonly"
         $ST_CLI config folders "lora_upload" devices add --device-id "${MY_SYNCTHING_ID}"
         
-        # フォルダ追加: Output (Send Only)
         $ST_CLI config folders add --id "output_download" --path "$SYNC_OUTPUT_DIR"
         $ST_CLI config folders "output_download" type set "sendonly"
         $ST_CLI config folders "output_download" devices add --device-id "${MY_SYNCTHING_ID}"
 
-        # GUI/APIの待受アドレス設定（Portalのポート競合を避けるため18384を使用）
+        # ネットワーク設定 (Vast.aiの外からGUIが見れるようにする)
         $ST_CLI config gui address set "0.0.0.0:18384"
         $ST_CLI config gui tls set false
-        
-        # APIキーを固定（もし後でAPIを使いたくなった時のために決めておく）
         $ST_CLI config gui apikey set "vastaicomfykey123"
-    else
-        printf "[Syncthing] SKIP: MY_SYNCTHING_ID not found in ENV.\n"
     fi
 
-    # 4. 既存のSyncthing（Portalが自動起動したものなど）があれば終了させる
+    # 3. 既存のSyncthingを停止させ、新しいホームディレクトリで起動
     pkill -9 syncthing || true
     sleep 1
-
-    # 5. 自分の設定ファイルを使って起動
-    printf "[Syncthing] Starting service with custom home: $MY_CONF_DIR\n"
+    printf "[Syncthing] Starting with custom home...\n"
     /opt/syncthing/syncthing --no-browser --home="$MY_CONF_DIR" > /workspace/syncthing.log 2>&1 &
 }
 
