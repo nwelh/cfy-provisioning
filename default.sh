@@ -76,7 +76,7 @@ function setup_syncthing_auto() {
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
     # 2. CLIツール定義 (パスを固定して「起動前」に設定を流し込む)
-    local ST_CLI="/opt/syncthing/syncthing cli --home=$MY_CONF_DIR"
+    local ST_CLI="/opt/syncthing/syncthing cli 
 
     if [ -n "$MY_SYNCTHING_ID" ]; then
         printf "[Syncthing] Applying settings to: $MY_CONF_DIR\n"
@@ -100,10 +100,10 @@ function setup_syncthing_auto() {
     fi
 
     # 3. 既存のSyncthingを停止させ、新しいホームディレクトリで起動
-    pkill -9 syncthing || true
-    sleep 1
-    printf "[Syncthing] Starting with custom home...\n"
-    /opt/syncthing/syncthing --no-browser --home="$MY_CONF_DIR" > /workspace/syncthing.log 2>&1 &
+    # pkill -9 syncthing || true
+    #sleep 1
+    #printf "[Syncthing] Starting with custom home...\n"
+    #/opt/syncthing/syncthing --no-browser --home="$MY_CONF_DIR" > /workspace/syncthing.log 2>&1 &
 }
 
 
