@@ -38,16 +38,16 @@ UNET_MODELS=(
 
 LORA_MODELS=(
     #"civitai.com/api/download/models/1858609"
-    #"civitai.com/api/download/models/2263757" #ass kb
-    #"civitai.com/api/download/models/2263203" #hip kb
+    #"civitai.com/api/download/models/2263757" #as kb
+    #"civitai.com/api/download/models/2263203" #hi  kb
     "civitai.com/api/download/models/660065" #tug
     "civitai.com/api/download/models/1845953" #Body Type
     "civitai.com/api/download/models/1891887" #Age 
     "civitai.com/api/download/models/1785002" #Perfect 
-    "civitai.com/api/download/models/1190779" #booty
+    "civitai.com/api/download/models/1190779" #boot
     "civitai.com/api/download/models/625365" #Thigh 
     "civitai.com/api/download/models/2272010" #Thigh kb
-    "civitai.com/api/download/models/1523340" #Thicc 
+    "civitai.com/api/download/models/1523340" #Thic
 )
 
 VAE_MODELS=(
