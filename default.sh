@@ -76,7 +76,7 @@ function setup_syncthing_auto() {
     ln -sf "$SYNC_OUTPUT_DIR" "${COMFYUI_DIR}/output"
 
     # 2. CLIツール定義 (パスを固定して「起動前」に設定を流し込む)
-    local ST_CLI="/opt/syncthing/syncthing cli 
+    local ST_CLI="/opt/syncthing/syncthing cli" 
 
     if [ -n "$MY_SYNCTHING_ID" ]; then
         printf "[Syncthing] Applying settings to: $MY_CONF_DIR\n"
@@ -178,6 +178,9 @@ function provisioning_get_files() {
     mkdir -p "$dir"
     shift
     arr=("$@")
+    # ここで配列が空でないか再確認
+    if [ ${#arr[@]} -eq 0 ]; then return 0; fi
+    
     printf "Downloading %s model(s) to %s...\n" "${#arr[@]}" "$dir"
     for url in "${arr[@]}"; do
         printf "Downloading: %s\n" "${url}"
